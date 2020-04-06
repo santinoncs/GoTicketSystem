@@ -10,11 +10,7 @@ type Response struct{
 	Message string
 }
 
-// IncomingQuestion : here you tell us what IncomingQuestion is
-type IncomingQuestion struct {
-	Priority   int         
-	Question   string      
-}
+
 
 // Job : here you tell us what Job is
 type Job struct{
