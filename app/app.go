@@ -1,5 +1,17 @@
 package app
 
+import (
+	"fmt"
+	"time"
+)
+
+
+var Jobchan1 chan Job
+var Jobchan2 chan Job
+
+
+
+
 // Response : here you tell us what Response is
 type Response struct {
 	Success bool
@@ -13,6 +25,13 @@ type Job struct {
 	ResponseChan chan Response
 }
 
+func NewResponse(success bool,message string) *Response {
+	return &Response {
+		Success: success,
+		Message: message,
+	   }  
+}
+
 func jobProcess(priority int, question string) Job {
 
 	responseChan1 := make(chan Response)
@@ -23,9 +42,13 @@ func jobProcess(priority int, question string) Job {
 }
 
 // Post : escribo los jobs en jobs channel ya con los datos de prio y message
-func Post(priority int, question string, jobchan chan Job) Response {
+func Post(priority int, question string) Response {
 
 	j := jobProcess(priority, question)
+
+	Jobchan1 = make(chan Job)
+	Jobchan2 = make(chan Job)
+
 
 	// aqui lanzo con go func el escribir en el channel de jobs
 
@@ -35,10 +58,18 @@ func Post(priority int, question string, jobchan chan Job) Response {
 
 			// escribo en jobsChan que trata con prioridad 1 , pero acepta jobs
 
-			jobchan <- j
+			Jobchan1 <- j
 
 		}
-		close(jobchan)
+		if priority == 2 {
+
+			// escribo en jobsChan que trata con prioridad 1 , pero acepta jobs
+
+			Jobchan2 <- j
+
+		}
+
+
 	}()
 	return j.process()
 }
@@ -51,6 +82,9 @@ func (j Job) process() Response {
 	select {
 	case Response := <-channelListenR:
 		return Response
+	case <-time.After(3 * time.Second):
+		fmt.Println("timeout 2")
+		res := NewResponse(true, "error")
+		return *res
 	}
-
 }

@@ -6,39 +6,55 @@ import (
 	"time"
 )
 
+
+
+
 // IncomingQuestion : here you tell us what IncomingQuestion is
 type IncomingQuestion struct {
 	Priority int
 	Question string
 }
 
-func newWorker(j int, jobs <-chan app.Job) {
 
-	d := app.Response{
-		Success: true,
-		Message: "bye",
+func newWorker(j int) {
+
+
+	res := app.NewResponse(true, "bye")
+
+
+	fmt.Println( "arrancando workers")
+
+	for {
+		select {
+		case msg1 := <-app.Jobchan1:
+			fmt.Println("escuchando en jobchan1")
+			msg1.ResponseChan <- *res
+			close(msg1.ResponseChan)
+		case msg2 := <-app.Jobchan2:
+			time.Sleep(4 * time.Second)
+			fmt.Println("escuchando en jobchan2")
+			msg2.ResponseChan <- *res
+			close(msg2.ResponseChan)
+		default:
+			break
+		}
 	}
-
-	for j := range jobs {
-
-		fmt.Println("worker", j, "started  job", j)
-		time.Sleep(time.Second)
-		fmt.Println("worker", j, "finished job", j)
-		j.ResponseChan <- d
-	}
-
 }
 
 func main() {
 
-	jobchan1 := make(chan app.Job)
 
-	for j := 1; j <= 2; j++ {
-		go newWorker(j, jobchan1)
+	numWorkers := 2
+
+
+	for j := 1; j <= numWorkers ; j++ {
+		go newWorker(j)
 	}
 
-	response := app.Post(1, "hola", jobchan1)
+	response := app.Post(2, "hola")
 
 	fmt.Println(response.Message)
+
+	
 
 }
