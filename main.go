@@ -15,7 +15,7 @@ func main() {
 
 	app.Start()
 
-	response := app.Post(2, "hola")
+	response := app.Post(1, "hola")
 
 	fmt.Println(response.Message)
 

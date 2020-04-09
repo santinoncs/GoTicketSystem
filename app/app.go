@@ -42,20 +42,30 @@ func Start() {
 	}
 }
 
-func newWorker(j int) {
+func (j Job) process() Response {
+
+// call to newReponse to initialize a response struct
+// return response 
 
 	res := newResponse(true, "bye")
 
+	return *res
+
+}
+
+
+func newWorker(j int) {
+	
 	for {
 		select {
 		case msg1 := <-Jobchan1:
 			fmt.Println("escuchando en jobchan1")
-			msg1.ResponseChan <- *res
+			msg1.ResponseChan <- msg1.process()
 			close(msg1.ResponseChan)
 		case msg2 := <-Jobchan2:
 			time.Sleep(4 * time.Second)
 			fmt.Println("escuchando en jobchan2")
-			msg2.ResponseChan <- *res
+			msg2.ResponseChan <- msg2.process()
 			close(msg2.ResponseChan)
 		}
 	}
@@ -104,7 +114,4 @@ func Post(priority int, question string) Response {
 
 }
 
-// func (j Job) process() Response {
-// 	// aqui leo el job, cojo el channel Response y me pongo a leer del channel  // hasta que  worker haya enviado el reponse que luego devolveré cuando     // llamen  a esta funcion
 
-// }
