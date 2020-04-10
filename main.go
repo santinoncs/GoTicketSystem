@@ -25,6 +25,7 @@ func main() {
 	fmt.Println("message respond is:", response.Message)
 	fmt.Println("Processed questions are:", st.GetProcessed())
 	fmt.Println("Number of Workers:", st.GetWorkers())
+	fmt.Println("average_response_time in ms:", st.GetAverage())
 
 
 	

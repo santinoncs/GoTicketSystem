@@ -53,10 +53,6 @@ func Start(st *Status,mutex *sync.Mutex) {
 		mutex.Unlock()
 		go newWorker(j,st,mutex)
 	}
-
-	go func () {
-		fmt.Println("Number of Workers:" , st.workers)
-	}()
 }
 
 func (j Job) process() Response {
@@ -128,10 +124,9 @@ func Post(priority int, question string,mutex *sync.Mutex,st *Status) (Response,
 		t := time.Now()
 		elapsed := t.Sub(start)
 		mutex.Lock()
-		st.timeProcessed = elapsed
+		st.timeProcessed += elapsed
 		st.processed ++
 		mutex.Unlock()
-		fmt.Println(st.timeProcessed)
 		return Response,st
 	case <-time.After(3 * time.Second):
 		fmt.Println("timeout 2")
@@ -149,3 +144,7 @@ func (st *Status ) GetWorkers() int{
 	 return st.workers
 }
 
+func (st *Status ) GetAverage() int64{
+	ms := int64(st.timeProcessed / time.Millisecond)
+	return ms
+}
