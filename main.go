@@ -12,14 +12,15 @@ type IncomingQuestion struct {
 	Question string
 }
 
-var st app.Status
-var mutex = &sync.Mutex{}
 
 func main() {
 
-	app.Start(&st,mutex)
+	st := app.NewStatus()
+	var mutex = &sync.Mutex{}
 
-	response,st := app.Post(1, "hola",mutex, &st)
+	app.Start(st,mutex)
+
+	response,st := app.Post(1, "hola",mutex, st)
 
 
 	fmt.Println("message respond is:", response.Message)

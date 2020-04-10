@@ -9,9 +9,13 @@ import (
 var jobchan1 chan Job
 var jobchan2 chan Job
 
-// type App struct {
 
+
+// type jobchan struct {
+// 	jobchan chan Job
 // }
+
+
 
 // Response : here you tell us what Response is
 type Response struct {
@@ -33,7 +37,10 @@ type Job struct {
 	ResponseChan chan Response
 }
 
-
+// NewStatus : Constructor of status struct
+func NewStatus() *Status {
+	return &Status{}
+}
 
 func newResponse(success bool, message string) *Response {
 	return &Response{
