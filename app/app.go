@@ -3,10 +3,11 @@ package app
 import (
 	"fmt"
 	"time"
+	"sync"
 )
 
-var Jobchan1 chan Job
-var Jobchan2 chan Job
+var jobchan1 chan Job
+var jobchan2 chan Job
 
 // type App struct {
 
@@ -18,12 +19,21 @@ type Response struct {
 	Message string
 }
 
+// Status : here you tell us what Status is
+type Status struct {
+	workers   int
+	processed int
+	timeProcessed   time.Duration
+}
+
 // Job : here you tell us what Job is
 type Job struct {
 	ID           int
 	Question     string
 	ResponseChan chan Response
 }
+
+
 
 func newResponse(success bool, message string) *Response {
 	return &Response{
@@ -33,13 +43,20 @@ func newResponse(success bool, message string) *Response {
 }
 
 // Start : starting workers
-func Start() {
+func Start(st *Status,mutex *sync.Mutex) {
 
 	numWorkers := 2
 
 	for j := 1; j <= numWorkers; j++ {
-		go newWorker(j)
+		mutex.Lock()
+		st.workers ++
+		mutex.Unlock()
+		go newWorker(j,st,mutex)
 	}
+
+	go func () {
+		fmt.Println("Number of Workers:" , st.workers)
+	}()
 }
 
 func (j Job) process() Response {
@@ -53,22 +70,23 @@ func (j Job) process() Response {
 
 }
 
+func newWorker(j int,st *Status,mutex *sync.Mutex) {
 
-func newWorker(j int) {
-	
 	for {
 		select {
-		case msg1 := <-Jobchan1:
-			fmt.Println("escuchando en jobchan1")
+		case msg1 := <-jobchan1:
+			time.Sleep(100 * time.Millisecond)
 			msg1.ResponseChan <- msg1.process()
 			close(msg1.ResponseChan)
-		case msg2 := <-Jobchan2:
+		case msg2 := <-jobchan2:
 			time.Sleep(4 * time.Second)
-			fmt.Println("escuchando en jobchan2")
 			msg2.ResponseChan <- msg2.process()
 			close(msg2.ResponseChan)
 		}
+		
 	}
+	
+
 }
 
 func newJob(priority int, question string) Job {
@@ -81,22 +99,24 @@ func newJob(priority int, question string) Job {
 }
 
 // Post : escribo los jobs en jobs channel ya con los datos de prio y message
-func Post(priority int, question string) Response {
+func Post(priority int, question string,mutex *sync.Mutex,st *Status) (Response,*Status) {
+
+	start := time.Now()
 
 	j := newJob(priority, question)
 
-	Jobchan1 = make(chan Job)
-	Jobchan2 = make(chan Job)
+	jobchan1 = make(chan Job)
+	jobchan2 = make(chan Job)
 
 	// aqui lanzo con go func el escribir en el channel de jobs
 
 	go func() {
 
 		if priority == 1 {
-			Jobchan1 <- j
+			jobchan1 <- j
 		}
 		if priority == 2 {
-			Jobchan2 <- j
+			jobchan2 <- j
 		}
 
 	}()
@@ -105,13 +125,27 @@ func Post(priority int, question string) Response {
 
 	select {
 	case Response := <-channelListenR:
-		return Response
+		t := time.Now()
+		elapsed := t.Sub(start)
+		mutex.Lock()
+		st.timeProcessed = elapsed
+		st.processed ++
+		mutex.Unlock()
+		fmt.Println(st.timeProcessed)
+		return Response,st
 	case <-time.After(3 * time.Second):
 		fmt.Println("timeout 2")
 		res := newResponse(true, "error")
-		return *res
+		return *res,st
 	}
 
 }
 
+func (st *Status ) GetProcessed() int{
+	 return st.processed
+}
+
+func (st *Status ) GetWorkers() int{
+	 return st.workers
+}
 
